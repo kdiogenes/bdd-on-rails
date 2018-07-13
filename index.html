@@ -1,0 +1,810 @@
+<!doctype html>
+<html lang="en">
+
+  <head>
+    <meta charset="utf-8">
+
+    <title>BDD on Rails – Getting development confidence</title>
+
+    <meta name="description" content="A framework for easily creating beautiful presentations using HTML">
+    <meta name="author" content="Hakim El Hattab">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <link rel="stylesheet" href="css/reveal.css">
+    <link rel="stylesheet" href="css/theme/moon.css" id="theme">
+
+    <!-- Theme used for syntax highlighting of code -->
+    <link rel="stylesheet" href="lib/css/zenburn.css">
+
+    <!-- Printing and PDF exports -->
+    <script>
+      var link = document.createElement( 'link' );
+      link.rel = 'stylesheet';
+      link.type = 'text/css';
+      link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+      document.getElementsByTagName( 'head' )[0].appendChild( link );
+    </script>
+
+    <!--[if lt IE 9]>
+    <script src="lib/js/html5shiv.js"></script>
+    <![endif]-->
+  </head>
+
+  <body>
+
+    <div class="reveal">
+
+      <!-- Any section element inside of this container is displayed as a slide -->
+      <div class="slides">
+        <section>
+          <h1>BDD on Rails</h1>
+          <h3>Getting development confidence</h3>
+          <p>
+            <small><a href="https://medium.com/@kdiogenes">Kadu Diógenes</a></small>
+          </p>
+        </section>
+
+        <section>
+          <h2>TDD - Test-Driven Development</h2>
+          <ul>
+            <li>What is TDD?</li>
+            <li>Small steps</li>
+            <li>Fail (red), pass (green), refactor...</li>
+            <li>Emergent design</li>
+            <li>Technique to deliver high-quality code to... testers!</li>
+          </ul>
+        </section>
+
+        <!-- Example of nested vertical slides -->
+        <section>
+          <section>
+            <h2>BDD - Behaviour-Driven Development</h2>
+            <ul>
+              <li>Like TDD, just better</li>
+              <li>Focus on what an object <i>does</i></li>
+              <li>Uses the right words: given, when and then</li>
+              <li>Augments TDD</li>
+            </ul>
+          </section>
+          <section>
+            <h2>Specifying your code with RSpec</h2>
+            <pre><code class="hljs" data-trim contenteditable>
+  describe MovieList do
+    context "when first created" do
+      it "is empty" do
+        movie_list = MovieList.new
+        movie_list.should be_empty
+      end
+    end
+  end
+            </code></pre>
+            <pre><code class="hljs nohighlight" data-trim contenteditable>
+  MovieList when first created
+    is empty
+            </code></pre>
+          </section>
+          <section>
+            <h2>BDD Cycle</h2>
+            <img src="imgs/tdd_v_bdd_cycle-1024x538.png"></img>
+          </section>
+        </section>
+
+        <section>
+          <section>
+            <h2>Planning</h2>
+            <ul>
+              <li>What is the release goal?</li>
+              <li>User Stories are a planning tool</li>
+              <ul>
+                <li>Have business value</li>
+                <li>Be testable</li>
+                <li>Be small enough to implement in one iteration</li>
+              </ul>
+              <li>ATDP - Acceptance Test–Driven Planning</li>
+              <li>Acceptance criteria</li>
+            </ul>
+          </section>
+          <section>
+            <pre><code class="hljs" data-trim contenteditable>
+  feature 'Pay' do
+    let!(:order) { create(:order, :with_items) }
+    let(:person) { order.student.person }
+
+    context 'cielo gateway' do
+      scenario 'success payment', :js, :vcr do
+        login(person)
+        visit order_path(order)
+        update_personal_info # given
+        pay_by_cielo_credit_card('0000000000000001', 'visa') # when
+        expect(page).to have_approved_payment_info # then
+      end
+    end
+  end
+            </code></pre>
+          </section>
+        </section>
+
+        <!-- <section>
+          <section>
+            <h2>Refactoring with confidence</h2>
+            <ul>
+              <li>What's a refactor?</li>
+              <li>Code smells</li>
+            </ul>
+          </section>
+
+          <section>
+            <pre><code class="hljs" data-trim contenteditable>
+  def guess(guess)
+    mark = ''
+    (0..3).each do |index|
+      if exact_match?(guess, index)
+        mark << '+'
+      end
+    end
+    (0..3).each do |index|
+      if number_match?(guess, index)
+        mark << '-'
+      end
+    end
+    @output.puts mark
+  end
+            </code></pre>
+          </section>
+
+          <section>
+            <h2>Code smells detected</h2>
+            <p>Temporary variable</p>
+            <p>Long method</p>
+          </section>
+
+          <section>
+            <h2>Code smell clarified</h2>
+            <ul>
+              <li>Count up the exact matches.</li>
+              <li>Count up the number matches.</li>
+              <li>Add a plus sign for each exact match.</li>
+              <li>Add a minus sign for each number match.</li>
+            </ul>
+          </section>
+
+          <section>
+            <pre><code class="hljs" data-trim contenteditable>
+  def guess(guess)
+    exact_match_count = 0 # <=
+    mark = ''
+    (0..3).each do |index|
+      if exact_match?(guess, index)
+        exact_match_count += 1 # <=
+      end
+    end
+    (0..3).each do |index|
+      if number_match?(guess, index)
+        mark << '-'
+      end
+    end
+    @output.puts '+'*exact_match_count + mark # <=
+  end
+            </code></pre>
+          </section>
+
+          <section>
+            <pre><code class="hljs" data-trim contenteditable>
+  def guess(guess)
+    exact_match_count = 0
+    number_match_count = 0 # <=
+    (0..3).each do |index|
+      if exact_match?(guess, index)
+        exact_match_count += 1
+      end
+    end
+    (0..3).each do |index|
+      if number_match?(guess, index)
+        number_match_count += 1 # <=
+      end
+    end
+    @output.puts '+'*exact_match_count + '-'*number_match_count # <=
+  end
+            </code></pre>
+          </section>
+
+          <section>
+            <h2>Extract method</h2>
+            <pre><code class="hljs" data-trim contenteditable>
+  def guess(guess)
+    number_match_count = 0
+    (0..3).each do |index|
+      if number_match?(guess, index)
+        number_match_count += 1
+      end
+    end
+    @output.puts '+'*exact_match_count(guess) + '-'*number_match_count
+  end
+
+  def exact_match_count(guess)
+    exact_match_count = 0
+    (0..3).each do |index|
+      if exact_match?(guess, index)
+        exact_match_count += 1
+      end
+    end
+    exact_match_count
+  end
+            </code></pre>
+          </section>
+
+          <section>
+            <pre><code class="hljs" data-trim contenteditable>
+  def guess(guess)
+    @output.puts '+'*exact_match_count(guess) + '-'*number_match_count(guess)
+  end
+  def exact_match_count(guess)
+    (0..3).inject(0) do |count, index|
+      count + (exact_match?(guess, index) ? 1 : 0)
+    end
+  end
+  def number_match_count(guess)
+    (0..3).inject(0) do |count, index|
+      count + (number_match?(guess, index) ? 1 : 0)
+    end
+  end
+  def exact_match?(guess, index)
+    guess[index] == @secret[index]
+  end
+  def number_match?(guess, index)
+    @secret.include?(guess[index]) && !exact_match?(guess, index)
+  end
+            </code></pre>
+          </section>
+
+          <section>
+            <h2>When to stop?</h2>
+            <p>There are some more code smells and refactoring that we can apply</p>
+            <ul>
+              <li>Large class</li>
+              <li>Extract class</li>
+              <li>Limit refactors relative to the story</li>
+            </ul>
+          </section>
+        </section> -->
+
+        <section>
+          <section>
+            <h2>How traditional projects fail</h2>
+            <ul>
+              <li>Delivering late or over budget</li>
+              <li>Delivering the wrong thing</li>
+              <li>Unstable in production</li>
+              <li>Costly to maintain</li>
+            </ul>
+            <p>If we now how, where are the whys? Glad you asked...</p>
+          </section>
+
+          <section>
+            <h2>Why traditional projects fail</h2>
+            <ul>
+              <li>How traditional projects works</li>
+              <li>How traditional projects really work</li>
+              <li>A self-fulfilling prophecy</li>
+            </ul>
+            <aside class="notes">
+              A self-fulfilling prophecy: The irony of the traditional project approach is that the process itself
+              causes the exponential cost of change!
+            </aside>
+          </section>
+        </section>
+
+        <section>
+          <section>
+            <h2>BDD is an Agile Tool</h2>
+            <ul>
+              <li><b>Individuals and interactions</b> over processes and tools</li>
+              <li><b>Working software</b> over comprehensive documentation</li>
+              <li><b>Customer collaboration</b> over contract negotiation</li>
+              <li><b>Responding to change</b> over following a plan</li>
+              <li>Is it a new silver bullet?</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2>Agile Methods Addres Project Risks</h2>
+            <ul>
+              <li>No Longer Delivering Late or Over Budget</li>
+              <li>No Longer Delivering the Wrong Thing</li>
+              <li>No Longer Unstable in Production</li>
+              <li>No Longer Costly to Maintain</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2>It's Also has Costs</h2>
+            <ul>
+              <li>Outcome-Based Planning</li>
+              <li>Streaming Requirements</li>
+              <li>Evolving Design</li>
+              <li>Changing Existing Code</li>
+              <li>Frequent Code Integration</li>
+              <li>Continual Regression Testing</li>
+              <li>Frequent Production Releases</li>
+              <li>Co-located Team</li>
+            </ul>
+
+            <aside class="notes">
+              Frequent Production Releases: This is one of the hardest challenges of Agile software delivery
+            </aside>
+          </section>
+        </section>
+
+        <section>
+          <h2>Software That Matters</h2>
+          <p>
+            <i>
+              Behaviour-Driven Development is about implementing an application by describing its
+              behavior from the perspective of its stakeholders.
+            </i>
+          </p>
+          <ul>
+            <li>Enough is enough</li>
+            <li>Deliver stakeholder value</li>
+            <li>It's all behaviour</li>
+          </ul>
+        </section>
+
+        <section id="transitions">
+          <section>
+            <h2>The Project Inception</h2>
+            <p>
+              Start simple: <i>improve our supply chain</i> or <i>understand our customers
+              better</i>.
+            </p>
+            <p>Forget about <i>nonfunctional requirements</i>.</p>
+            <p>
+              Core <i>stakeholders</i> define the vision, incidental <i>stakeholders</i> help to
+              understande <i>what's possible</i>, at <i>what cost</i> and with what
+              <i>likelihood</i>.
+            </p>
+          </section>
+
+          <section>
+            <h2>The Project Inception</h2>
+            <p>
+              Some recommends to describe these things using <i>SMART</i>.
+            </p>
+            <p>
+              BDD recommends to use <i>feature set</i>, like <i>reporting</i> or <i>customer
+              registration</i>.
+            </p>
+            <p>General concepts to keep the conversation and help specify the solution.</p>
+
+            <aside class="notes">
+  Finally, we are in a position to talk about the specific features or stories that make up these themes. (See Stories In, Features Out, on page 127 for a discussion of stories and features.)
+              <br />
+  This is the level where we will actually be working day-to-day—these describe the behavior we will implement in software.
+              <br />
+  You can see how this gives us traceability right back to a specific stakeholder need. Each feature is there only because it is adding value to a feature set. Each feature set is contributing to one or more of the outcomes, and each outcome is part of the overall purpose of the project. Too often Agile teams dive straight into the feature or story level without taking the time to think about the overall shape of the delivery.
+              <br />
+  At this stage, you could be forgiven for thinking this looks a lot like traditional top-down decomposition. The difference is that we stop before a traditional analysis phase would, again remembering to only do just enough.
+              <br />
+  It is dangerous to get too hung up on the detail of features because it can create false expectations with your stakeholders. Remember, they came to us with a need or problem, so success for them will be if we can meet that need and solve that problem. By focusing on the details, we inadvertently shift their attention so that they now associate success with delivering the features we drove out during the planning.
+              <br />
+  A better use of our efforts during an inception is to try to identify and mitigate the “gotchas.” Where are the risky areas—in terms of technology or integration points, an unknown business domain, access to key stakeholders, market conditions, external dependencies—that are likely to derail our nascent project? Keeping a log of these risks and assumptions is at least as important as the breakdown of the project objectives.
+            </aside>
+          </section>
+        </section>
+
+        <section id="themes">
+          <h2>The Cycle of Delivery</h2>
+          <ul>
+            <li>Stakeholder discuss requirements with a business analyst</li>
+            <li>Analyst helps stakeholder write requirements as <i>features</i></li>
+            <li>Turn features in <i>stories</i> of few days of work</li>
+            <li>Define what <i>done</i> means for each <i>story</i></li>
+            <li>Testers help to identify the important <i>scenarios</i></li>
+            <li>Scenarios should be easy to read by business people</li>
+            <li>Implementation, deploy, fedback and repeat!</li>
+          </ul>
+        </section>
+
+        <section>
+          <section>
+            <h2>What's in a Story?</h2>
+            <ul>
+              <li>Title</li>
+              <li>Narrative</li>
+              <ul>
+                <li>Identifies <i>stakeholder</i></li>
+                <li>Description of the <i>feature</i></li>
+                <li><i>Benefit</i> of the delivery</li>
+              </ul>
+              <li>Acceptance criteria</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2>Common Story Formats</h2>
+            <p><i>as a [stakeholder], I want [feature] so that [benefit]</i></p>
+            <p><i>in order to [benefit], a [stakeholder] wants to [feature]</i></p>
+          </section>
+        </section>
+
+        <section>
+          <section>
+            <h2>BDD on Rails, finally 🎉</h2>
+            <p>RSpec</p>
+            <p>Capybara</p>
+            <p>FactoryBot</p>
+            <p>vcr</p>
+          </section>
+
+          <section>
+            <h2>Outside-In Rails Development</h2>
+            <ul>
+              <ol>
+                <li>Start with a scenario</li>
+                <li>Run the scenario with RSpec and Capybara</li>
+                <li>Drive out the view implementation using the red/green/refactor cycle</li>
+                <li>Drive out the controller with RSpec</li>
+                <li>Drive out the models and other objects with RSpec</li>
+                <li>Execute the scenario specs to be sure that everything is fine</li>
+              </ol>
+            </ul>
+          </section>
+        </section>
+
+        <section>
+          <section>
+            <h2>Digging Deep</h2>
+            <p>Let's get hands dirty add implement subscriptions in a BDD fashion!</p>
+            <pre><code class="hljs" data-trim contenteditable>
+    $: git hack feature/subscription-specs
+            </code></pre>
+          </section>
+
+          <section>
+            <pre><code class="hljs" data-trim data-noescape contenteditable>
+    require 'rails_helper'
+
+    feature 'Subscription' do
+      <span class="fragment highlight-current-red">let(:user) { create(:user, :with_subscription_permissions) }
+      let(:student) { create(:student) }
+      let(:assignable_course) { create(:course_as_full, :assignable, :published) }</span>
+
+      <span class="fragment highlight-current-red">scenario 'user creates subscription for student', :js do</span>
+        <span class="fragment highlight-current-red">login(user.person)
+        visit rails_admin.new_subscription_path(model_name: :subscription)
+        autocomplete('Buscar Cliente', with: student.person.full_name)
+        autocomplete('Buscar Assinatura', with: assignable_course.title)</span>
+        <span class="fragment highlight-current-red">click_button 'Salvar'</span>
+        <span class="fragment highlight-current-red">expect(page).to have_content('Assinatura criada com sucesso')</span>
+      end
+    end
+            </code></pre>
+          </section>
+
+          <section>
+            <pre><code class="hljs" data-trim contenteditable>
+  require 'rails_helper'
+
+  describe Subscription do
+    it { expect(subject).to validate_presence_of(:item) }
+    it { expect(subject).to validate_presence_of(:student) }
+    it "only allow one assignable item per student", :focus do
+      subscription = create(:subscription)
+      expect(subscription).to validate_uniqueness_of(:item).scoped_to(:student_id)
+        .with_message('o aluno já possui esta assinatura')
+    end
+  end
+            </code></pre>
+          </section>
+
+          <section>
+            <pre><code class="hljs" data-trim contenteditable>
+  def iugu_subscription(reload = false)
+    return nil if iugu_subscription_id.nil?
+    if reload
+      @iugu_subscription = ::Iugu::Subscription.fetch(id: iugu_subscription_id)
+    else
+      @iugu_subscription ||= ::Iugu::Subscription.new.tap do |subscription|
+        subscription.set_attributes(
+          Rails.cache.fetch("iugu_subscriptions/#{id}_#{updated_at}", expires_in: 24.hours) do
+            ::Iugu::Subscription.fetch(id: iugu_subscription_id).attributes rescue {}
+          end
+        )
+      end
+    end
+    @iugu_subscription
+  end
+            </code></pre>
+          </section>
+
+          <section>
+            <pre><code class="hljs" data-trim contenteditable>
+  describe '#iugu_subscription', :focus do
+    context 'without iugu subscription id' do
+      subject { build(:subscription) }
+      it { expect(subject.iugu_subscription).to be_nil }
+    end
+
+    context 'with iugu subscription id' do
+      subject { build(:subscription, iugu_subscription_id: '53F25F7547934DB58578AC781295A801') }
+
+      it 'cache iugu requests' do
+        Rails.cache.clear
+        subject.iugu_subscription
+        expect(::Iugu::Subscription).not_to receive(:fetch)
+        subject.iugu_subscription
+      end
+
+      it 'ignores cache when using the reload flag' do
+        Rails.cache.clear
+        subject.iugu_subscription
+        expect(::Iugu::Subscription).to receive(:fetch)
+        subject.iugu_subscription(true)
+      end
+
+      it 'returns an empty Iugu::Subscription for invalid iugu_subscription_id' do
+        subject.iugu_subscription_id = 'invalid'
+        expect(subject.iugu_subscription.attributes).to be_empty
+      end
+    end
+  end
+            </code></pre>
+          </section>
+
+          <section>
+            <pre><code class="hljs nohighlight" data-trim contenteditable>
+  Subscription
+    #iugu_subscription
+      without iugu subscription id
+        should be nil
+      with iugu subscription id
+        cache iugu requests
+        returns an empty Iugu::Subscription for invalid iugu_subscription_id
+        ignores cache when using the reload flag
+            </code></pre>
+          </section>
+
+          <section>
+            <h2>It's not All Flowers</h2>
+            <p>Capybara has a great API, but can't deal with all JS libs</p>
+            <p>jQueryUI 🤮</p>
+            <p>Be prepared to learn Capybara internals and open your browser console and interact with JS</p>
+            <p>We just migrated from capybara-webkit to headless Chrome! 🎉</p>
+          </section>
+
+          <section>
+            <pre><code class="hljs" data-trim contenteditable>
+  def autocomplete field, options={}
+    options, field = field, nil if field.is_a? Hash
+    if field
+      find_field(field).autocomplete(options)
+      session.find('li.ui-menu-item a').click
+    else
+      set(options.delete(:with)) if options[:with]
+      jquery_this(%{.keydown()})
+    end
+  end
+
+  def jquery_this dot_something, *args
+    session.driver.browser.execute_script %{return $(arguments[0])#{dot_something}}, self.native, *args
+  end
+            </code></pre>
+          </section>
+
+          <section>
+            <img class="stretch" data-src="imgs/gitlab_from_webkit_to_headless.png" />
+          </section>
+        </section>
+
+        <section>
+          <section>
+            <h2>Controller Specs</h2>
+            <pre><code class="hljs" data-trim data-noescape contenteditable>
+    <span class="fragment highlight-current-red">describe OauthController do</span>
+      describe "#index" do
+        context "anonymous user" do
+          <span class="fragment highlight-current-red">before { get(:index) }</span>
+          it "render index template" do
+            expect(response).to render_template(:index)
+          end
+          it "assigns @person variable" do
+            expect(assigns(:person)).to be_a_new(Person::FullValidation)
+          end
+        end
+      end
+    end
+            </code></pre>
+          </section>
+
+          <section>
+            <h2>Common expectations</h2>
+            <pre><code class="hljs" data-trim contenteditable>
+  expect(response).to render_template(:new)
+  expect(response).to redirect_to(location)
+  expect(response).to have_http_status(:created)
+  expect(assigns(:widget)).to be_a_new(Widget)
+            </code></pre>
+          </section>
+        </section>
+
+        <section>
+          <h2>Specs Available</h2>
+          <ul>
+            <li>Model</li>
+            <li>Controller</li>
+            <li>Request</li>
+            <li>Feature</li>
+            <li>View</li>
+            <li>Helper</li>
+            <li>Mailer</li>
+            <li>Routing</li>
+          </ul>
+        </section>
+
+        <section>
+          <section>
+            <h2>SWIFT: Making Great Tests</h2>
+            <ul>
+              <li><b>S</b>traightforward</li>
+              <li><b>W</b>ell defined</li>
+              <li><b>I</b>ndependent</li>
+              <li><b>F</b>ast</li>
+              <li><b>T</b>ruthful</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2>Straightforward</h2>
+            <pre><code class="hljs" data-trim contenteditable>
+  ## Don't do this
+  it "should add to 37" do
+    expect(User.all_total_points).to eq(37)
+  end
+
+  ## Straight!
+  it "rounds total points to the nearest integer" do
+    User.create(:points => 32.1)
+    User.create(:points => 5.3)
+    expect(User.all_total_points).to eq(37)
+  end
+            </code></pre>
+          </section>
+
+          <section>
+            <h2>Well Defined</h2>
+            <p>Well defined tests results in the same results in every execution</p>
+            <p>Villains: time and dates, random numbers and external services calls</p>
+            <p>Heroes: mock/stub and timecop and vcr gems</p>
+          </section>
+
+          <section>
+            <h2>Independent</h2>
+            <p>The tests executation order should not change it's result</p>
+          </section>
+
+          <section>
+            <h2>Fast</h2>
+            <p>You can't be able to check Twitter while your tests run!</p>
+            <p>The most important points of slow Rails tests:</p>
+            <ul>
+              <li>Startup time</li>
+              <li>Lots of independent object creation to test a method</li>
+              <li>Extensive use of database or external services</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2>Truthful</h2>
+            <p>A test must pass when the code works, and fails when it doesn't</p>
+            <pre><code class="hljs" data-trim contenteditable>
+  it "shows the project section" do
+    get :dashboard
+    expect(response).to have_selector("h2", :text => "My Projects")
+  end
+
+  it "shows the project section" do
+    get :dashboard
+    expect(response).to have_selector("h2#projects")
+  end
+            </code></pre>
+          </section>
+
+          <section>
+            <h2>SWIFT Tests</h2>
+            <p>Tests suites that are slow, complicated or fragile are worst than not tests at all.</p>
+            <p>Write tests against behaviour and not implementation and make then fast!</p>
+          </section>
+        </section>
+
+        <section>
+          <section>
+            <h2>Test Pyramid</h2>
+            <img data-src="imgs/test_pyramid.png" />
+          </section>
+
+          <section>
+            <h2>Test Pyramid</h2>
+            <img data-src="imgs/test_pyramid_2.png" />
+          </section>
+
+          <section>
+            <h2>Testing Iceberg</h2>
+            <img data-src="imgs/testing_iceberg.png" />
+          </section>
+        </section>
+
+        <section>
+          <h2>Becoming a Great Tester</h2>
+          <p>It's like programming, writing, playing and sex!</p>
+          <p>Study and do it a lot!</p>
+        </section>
+
+        <section>
+          <section>
+            <h2>Resources - Books</h2>
+            <a href="https://pragprog.com/book/achbd/the-rspec-book">
+              <img data-src="imgs/achbd_xlargecover.jpg" />
+            </a>
+            <a href="https://leanpub.com/everydayrailsrspec">
+              <img data-src="imgs/ertr.jpg" />
+            </a>
+            <a href="https://pragprog.com/book/nrtest2/rails-4-test-prescriptions">
+              <img data-src="imgs/nrtest2_xlargecover.jpg" />
+            </a>
+            <a href="https://gumroad.com/l/testing-rails">
+              <img data-src="imgs/testing-rails-cover.png" />
+            </a>
+          </section>
+
+          <section>
+            <h2>Resources - Links</h2>
+            <ul>
+              <li><a href="https://relishapp.com/rspec/">https://relishapp.com/rspec/</a></li>
+              <li><a href="http://www.betterspecs.org/br/">http://www.betterspecs.org/br/</a></li>
+              <li><a href="https://robots.thoughtbot.com/acceptance-tests-at-a-single-level-of-abstraction">Acceptance Tests at a Single Level of Abstraction</a></li>
+              <li><a href="https://robots.thoughtbot.com/rails-test-types-and-the-testing-pyramid">Rails Test Types and the Testing Pyramid</a></li>
+              <li><a href="https://about.gitlab.com/2017/12/19/moving-to-headless-chrome/">How GitLab switched to Headless Chrome for testing</a></li>
+            </ul>
+          </section>
+        </section>
+
+        <section>
+          <h2>Thank You!</h2>
+        </section>
+      </div>
+    </div>
+
+    <script src="lib/js/head.min.js"></script>
+    <script src="js/reveal.js"></script>
+
+    <script>
+
+      // More info https://github.com/hakimel/reveal.js#configuration
+      Reveal.initialize({
+        controls: true,
+        progress: true,
+        history: true,
+        center: true,
+
+        transition: 'slide', // none/fade/slide/convex/concave/zoom
+
+        // More info https://github.com/hakimel/reveal.js#dependencies
+        dependencies: [
+          { src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+          { src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+          { src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+          { src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+          { src: 'plugin/search/search.js', async: true },
+          { src: 'plugin/zoom-js/zoom.js', async: true },
+          { src: 'plugin/notes/notes.js', async: true }
+        ]
+      });
+
+    </script>
+
+  </body>
+</html>
